@@ -1,0 +1,1724 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Live Commerce Studio Control Center & Monitoring</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            cmd: {
+              bg: '#090d16',
+              surface: '#111827',
+              card: '#161f33',
+              border: '#243049',
+              accent: '#3b82f6'
+            }
+          },
+          animation: {
+            'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #090d16;
+      color: #f1f5f9;
+      overflow-x: hidden;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    .glow-onair {
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.18), inset 0 0 0 1px rgba(239, 68, 68, 0.45);
+    }
+    .glow-ending {
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.2), inset 0 0 0 1px rgba(245, 158, 11, 0.5);
+    }
+    .glow-prep {
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.15), inset 0 0 0 1px rgba(59, 130, 246, 0.4);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-blue-500 selection:text-white">
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none px-4 sm:px-0"></div>
+
+  <!-- Top Command Header -->
+  <header class="sticky top-0 z-30 bg-[#0b1120]/95 backdrop-blur-md border-b border-slate-800/90 shadow-lg">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 shadow-lg shadow-blue-600/20">
+            <i data-lucide="radio" class="w-5 h-5 text-white"></i>
+            <span class="absolute -top-1 -right-1 flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+            </span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-white">STUDIO CONTROL CENTER</h1>
+              <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                JOGJIS 2026
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 flex items-center gap-1.5">
+              <span>Sumber: <strong class="text-slate-300">Dashboard_3Hari</strong></span>
+              <span>•</span>
+              <span id="lastSyncText" class="text-emerald-400 font-medium">Data Lokal Aktif</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Mobile Quick Sync Button -->
+        <button onclick="openModal('syncModal')" class="lg:hidden flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition shadow-md">
+          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+          <span>Update</span>
+        </button>
+      </div>
+
+      <!-- Center: Live Clock & Engine Controls -->
+      <div class="flex flex-wrap items-center justify-between sm:justify-start lg:justify-center gap-2 sm:gap-3 bg-slate-900/90 border border-slate-800 px-3 py-2 rounded-2xl">
+        <div class="flex items-center gap-2.5">
+          <div class="p-1.5 rounded-lg bg-slate-800 text-blue-400">
+            <i data-lucide="clock" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span id="liveClock" class="font-mono text-base sm:text-lg font-bold text-white tracking-wider">00:00:00</span>
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">WIB</span>
+            </div>
+            <div id="liveDateDisplay" class="text-[11px] text-slate-400 font-medium">Memuat tanggal...</div>
+          </div>
+        </div>
+
+        <div class="h-7 w-px bg-slate-800 hidden sm:block"></div>
+
+        <!-- Auto-Sync Engine Toggle -->
+        <div class="flex items-center gap-2">
+          <button id="engineModeBtn" onclick="toggleEngineMode()" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer bg-emerald-500/15 text-emerald-400 border-emerald-500/30" title="Klik untuk ganti antara Auto-Sync Jam Real-Time atau Manual Override">
+            <span id="engineDot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="engineLabel">Auto-Status: ON</span>
+          </button>
+
+          <!-- Simulasi / Pilih Tanggal Acuan Engine -->
+          <select id="activeDateReference" onchange="handleReferenceDateChange()" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs rounded-xl px-2.5 py-1.5 focus:outline-none focus:border-blue-500 font-medium" title="Tanggal acuan monitoring studio">
+            <option value="AUTO">Tgl: Otomatis Hari Ini</option>
+            <option value="20/11/2026" selected>Tgl Acuan: 20/11/2026</option>
+            <option value="21/11/2026">Tgl Acuan: 21/11/2026</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Right: Action Buttons -->
+      <div class="hidden lg:flex items-center gap-2">
+        <button onclick="syncFromGoogleSheet(true)" id="headerQuickSyncBtn" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition cursor-pointer" title="Tarik data terbaru langsung dari Google Sheet">
+          <i data-lucide="cloud-download" class="w-4 h-4 text-sky-400"></i>
+          <span>Sync Sheet</span>
+        </button>
+
+        <button onclick="openModal('syncModal')" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition shadow-lg shadow-blue-600/20 cursor-pointer">
+          <i data-lucide="database" class="w-4 h-4"></i>
+          <span>Update / Paste Data</span>
+        </button>
+
+        <button onclick="openAddSessionModal()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition shadow-lg shadow-emerald-600/20 cursor-pointer">
+          <i data-lucide="plus" class="w-4 h-4"></i>
+          <span>Sesi Baru</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 py-5 space-y-6">
+
+    <!-- KPI Summary Strip -->
+    <section class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div class="bg-[#111827] border border-slate-800/90 rounded-2xl p-3.5 flex items-center justify-between">
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Studio ON AIR</p>
+          <p id="statOnAir" class="text-2xl font-extrabold text-red-400 mt-0.5 font-mono">0 / 8</p>
+        </div>
+        <div class="p-2.5 rounded-xl bg-red-500/10 text-red-400 border border-red-500/20">
+          <i data-lucide="video" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <div class="bg-[#111827] border border-slate-800/90 rounded-2xl p-3.5 flex items-center justify-between">
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Ending Soon (&lt;30m)</p>
+          <p id="statEndingSoon" class="text-2xl font-extrabold text-amber-400 mt-0.5 font-mono">0</p>
+        </div>
+        <div class="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <div class="bg-[#111827] border border-slate-800/90 rounded-2xl p-3.5 flex items-center justify-between">
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Waiting / Prep</p>
+          <p id="statWaiting" class="text-2xl font-extrabold text-sky-400 mt-0.5 font-mono">0</p>
+        </div>
+        <div class="p-2.5 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20">
+          <i data-lucide="hourglass" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <div class="bg-[#111827] border border-slate-800/90 rounded-2xl p-3.5 flex items-center justify-between">
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Estafet Maraton</p>
+          <p id="statContinuous" class="text-2xl font-extrabold text-purple-400 mt-0.5 font-mono">0</p>
+        </div>
+        <div class="p-2.5 rounded-xl bg-purple-500/10 text-purple-400 border border-purple-500/20">
+          <i data-lucide="repeat" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <div class="bg-[#111827] border border-slate-800/90 rounded-2xl p-3.5 flex items-center justify-between">
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Selesai / End Stream</p>
+          <p id="statFinish" class="text-2xl font-extrabold text-emerald-400 mt-0.5 font-mono">0</p>
+        </div>
+        <div class="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+          <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+        </div>
+      </div>
+
+      <div class="bg-[#111827] border border-slate-800/90 rounded-2xl p-3.5 flex items-center justify-between">
+        <div>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Total Sesi Terdata</p>
+          <p id="statTotal" class="text-2xl font-extrabold text-white mt-0.5 font-mono">0</p>
+        </div>
+        <div class="p-2.5 rounded-xl bg-slate-800 text-slate-300 border border-slate-700">
+          <i data-lucide="layers" class="w-5 h-5"></i>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 1: 8-Studio Live Monitoring Grid -->
+    <section class="space-y-3">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5">
+          <span class="w-2.5 h-6 rounded-full bg-red-500"></span>
+          <h2 class="text-base sm:text-lg font-bold text-white tracking-tight">Monitoring Real-Time 8 Studio (Studio 1 – Studio 8)</h2>
+          <span id="studioGridDateBadge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">20/11/2026</span>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> ON AIR</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> ENDING SOON</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span> WAITING / PREP</span>
+          <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-slate-600"></span> IDLE / STANDBY</span>
+        </div>
+      </div>
+
+      <!-- 8 Studio Cards Grid -->
+      <div id="studioGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- Rendered dynamically by JS -->
+      </div>
+    </section>
+
+    <!-- Section 2: Master Schedule Table & Filter Controls -->
+    <section class="bg-[#111827] border border-slate-800/90 rounded-2xl shadow-xl overflow-hidden">
+      <!-- Filter Toolbar -->
+      <div class="p-4 sm:p-5 border-b border-slate-800 space-y-4">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <h2 class="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                <i data-lucide="calendar-clock" class="w-5 h-5 text-blue-400"></i>
+                <span>Jadwal Master — Upcoming Live</span>
+              </h2>
+              <span id="upcomingHeaderBadge" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-500/15 text-sky-300 border border-sky-500/30">
+                <span class="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse"></span>
+                <span id="upcomingBadgeCount">0 Upcoming</span>
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">
+              Hanya menampilkan antrean sesi <strong class="text-sky-300">Upcoming Live (WAITING / PREP)</strong> berikutnya. Klik badge <strong class="text-slate-200">STATUS/SWITCH</strong> untuk update cepat.
+            </p>
+          </div>
+
+          <!-- Action Buttons on Mobile & Export -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="openAddSessionModal()" class="lg:hidden flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Tambah Sesi</span>
+            </button>
+            <button onclick="exportToCSV()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition cursor-pointer">
+              <i data-lucide="download" class="w-3.5 h-3.5 text-emerald-400"></i>
+              <span>Export CSV</span>
+            </button>
+            <button onclick="confirmResetDefault()" class="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-red-950/60 text-slate-300 hover:text-red-300 border border-slate-700 hover:border-red-800 text-xs font-semibold transition cursor-pointer" title="Kembalikan ke 51 data awal Dashboard_3Hari">
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+              <span>Reset Default</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filters Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+          <!-- Search Input -->
+          <div class="lg:col-span-4 relative">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+            <input type="text" id="searchInput" oninput="renderAll()" placeholder="Cari Host, Brand, atau Catatan..." class="w-full bg-slate-900 border border-slate-700/90 text-sm text-white placeholder-slate-500 rounded-xl pl-10 pr-4 py-2 focus:outline-none focus:border-blue-500 transition" />
+          </div>
+
+          <!-- Date Filter -->
+          <div class="lg:col-span-2">
+            <select id="filterDate" onchange="renderAll()" class="w-full bg-slate-900 border border-slate-700/90 text-sm text-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500">
+              <option value="ALL" selected>Semua Tanggal Upcoming</option>
+              <option value="20/11/2026">20/11/2026</option>
+              <option value="21/11/2026">21/11/2026</option>
+            </select>
+          </div>
+
+          <!-- Studio Filter -->
+          <div class="lg:col-span-2">
+            <select id="filterStudio" onchange="renderAll()" class="w-full bg-slate-900 border border-slate-700/90 text-sm text-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500">
+              <option value="ALL">Semua Studio (1-8)</option>
+              <option value="Studio 1">Studio 1</option>
+              <option value="Studio 2">Studio 2</option>
+              <option value="Studio 3">Studio 3</option>
+              <option value="Studio 4">Studio 4</option>
+              <option value="Studio 5">Studio 5</option>
+              <option value="Studio 6">Studio 6</option>
+              <option value="Studio 7">Studio 7</option>
+              <option value="Studio 8">Studio 8</option>
+            </select>
+          </div>
+
+          <!-- Status Filter -->
+          <div class="lg:col-span-2">
+            <select id="filterStatus" onchange="renderAll()" class="w-full bg-slate-900 border border-slate-700/90 text-sm text-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500">
+              <option value="ALL">Semua Upcoming</option>
+              <option value="WAITING_ONLY">🔵 WAITING</option>
+              <option value="WAITING_STREAM">⏳ PREP / WAITING STREAM</option>
+            </select>
+          </div>
+
+          <!-- Maraton / Shift Filter -->
+          <div class="lg:col-span-2">
+            <select id="filterMaraton" onchange="renderAll()" class="w-full bg-slate-900 border border-slate-700/90 text-sm text-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500">
+              <option value="ALL">Semua Tipe Shift</option>
+              <option value="CONTINUOUS">⚡ CONTINUOUS (Estafet)</option>
+              <option value="START">🚀 START (Buka Stream)</option>
+              <option value="LAST_END">🛑 LAST SESSION: END</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Responsive Table Container -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-900/90 border-b border-slate-800 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              <th class="py-3.5 px-4">Tanggal</th>
+              <th class="py-3.5 px-4">Studio Actual</th>
+              <th class="py-3.5 px-4">Jam Tayang & Durasi</th>
+              <th class="py-3.5 px-4">Brand</th>
+              <th class="py-3.5 px-4">Host</th>
+              <th class="py-3.5 px-4">Alur Maraton / Estafet</th>
+              <th class="py-3.5 px-4">Prep</th>
+              <th class="py-3.5 px-4">Status / Switch</th>
+              <th class="py-3.5 px-4">Note</th>
+              <th class="py-3.5 px-4 text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="scheduleTableBody" class="divide-y divide-slate-800/70 text-sm">
+            <!-- Rows injected via JS -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Empty State -->
+      <div id="emptyState" class="hidden py-12 px-4 text-center">
+        <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-slate-800 text-slate-400 mb-3">
+          <i data-lucide="search-x" class="w-6 h-6"></i>
+        </div>
+        <h3 class="text-base font-bold text-white">Tidak ada jadwal Upcoming Live yang cocok</h3>
+        <p class="text-xs text-slate-400 mt-1">Semua sesi pada filter ini sudah berjalan/selesai, atau coba ubah filter tanggal &amp; studio.</p>
+      </div>
+
+      <!-- Table Footer Info -->
+      <div class="bg-slate-900/60 px-4 py-3 border-t border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-slate-400">
+        <div>
+          Menampilkan <span id="visibleCount" class="font-bold text-white">0</span> dari <span id="totalCountFooter" class="font-bold text-white">0</span> antrean Upcoming Live.
+        </div>
+        <div class="flex flex-wrap items-center gap-3">
+          <span class="inline-flex items-center gap-1 text-purple-300"><span class="px-1.5 py-0.5 rounded bg-purple-500/20 border border-purple-500/40 text-[10px] font-bold">CONTINUOUS</span> = Estafet Host (Jangan matikan live!)</span>
+          <span class="inline-flex items-center gap-1 text-rose-300"><span class="px-1.5 py-0.5 rounded bg-rose-500/20 border border-rose-500/40 text-[10px] font-bold">LAST: END</span> = Akhir Sesi (Wajib End Stream)</span>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 1: UPDATE DATA BERKELANJUTAN (LIVE SHEET SYNC & QUICK PASTE)    -->
+  <!-- ===================================================================== -->
+  <div id="syncModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4 overflow-y-auto">
+    <div class="bg-[#111827] border border-slate-700 rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden my-auto">
+      <!-- Modal Header -->
+      <div class="px-5 py-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="p-2 rounded-xl bg-blue-500/15 text-blue-400">
+            <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">Sinkronisasi & Update Data Berkelanjutan</h3>
+            <p class="text-xs text-slate-400">Hubungkan langsung ke Google Sheet atau Paste baris baru</p>
+          </div>
+        </div>
+        <button onclick="closeModal('syncModal')" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Tabs Navigation -->
+      <div class="flex border-b border-slate-800 bg-slate-900/50 px-5 pt-2 gap-4">
+        <button id="tabBtnSheet" onclick="switchSyncTab('sheet')" class="pb-2.5 text-xs font-bold border-b-2 border-blue-500 text-blue-400 transition cursor-pointer">
+          1. Live Google Sheet CSV Sync
+        </button>
+        <button id="tabBtnPaste" onclick="switchSyncTab('paste')" class="pb-2.5 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer">
+          2. Quick Paste dari Google Sheet
+        </button>
+      </div>
+
+      <!-- Tab 1: Live Google Sheet CSV Sync -->
+      <div id="syncTabSheet" class="p-5 space-y-4">
+        <div class="space-y-1.5">
+          <label class="block text-xs font-semibold text-slate-300">URL Endpoint CSV Google Sheet (<code class="text-blue-400">Dashboard_3Hari</code>)</label>
+          <div class="flex flex-col sm:flex-row gap-2">
+            <input type="text" id="sheetCsvUrlInput" class="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-blue-500" value="https://docs.google.com/spreadsheets/d/1tY2KrUSssIys0C1rXu3jPHW14XdIlRvgmk6YIltXeS8/gviz/tq?tqx=out:csv&sheet=Dashboard_3Hari" />
+            <button onclick="syncFromGoogleSheet(false)" id="modalSyncBtn" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 shrink-0 cursor-pointer">
+              <i data-lucide="cloud-download" class="w-4 h-4"></i>
+              <span>Sync Sekarang</span>
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400">
+            URL di atas sudah dikonfigurasi ke ID Sheet <code class="text-slate-300">1tY2KrUSssIys0C1rXu3jPHW14XdIlRvgmk6YIltXeS8</code> tab <code class="text-slate-300">Dashboard_3Hari</code>.
+          </p>
+        </div>
+
+        <!-- Auto-Refresh Interval Setting -->
+        <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div class="text-xs font-bold text-white flex items-center gap-1.5">
+              <i data-lucide="timer" class="w-4 h-4 text-emerald-400"></i>
+              <span>Auto-Refresh Berkala dari Google Sheet</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-0.5">Otomatis menarik pembaruan jadwal tanpa perlu reload halaman.</p>
+          </div>
+          <select id="autoRefreshSelect" onchange="setupAutoRefresh()" class="bg-slate-800 border border-slate-700 text-xs font-semibold text-white rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500">
+            <option value="0">Mati (Manual)</option>
+            <option value="30">Setiap 30 Detik</option>
+            <option value="60">Setiap 60 Detik</option>
+            <option value="300">Setiap 5 Menit</option>
+          </select>
+        </div>
+
+        <!-- Sync Status Feedback Box -->
+        <div id="syncFeedbackBox" class="hidden rounded-xl p-3 text-xs border"></div>
+
+        <!-- 1-Click Guide Accordion -->
+        <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3.5 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+              <i data-lucide="info" class="w-4 h-4"></i>
+              <span>Panduan Jika Gagal Sync (Sheet Masih Private)</span>
+            </span>
+            <a href="https://docs.google.com/spreadsheets/d/1tY2KrUSssIys0C1rXu3jPHW14XdIlRvgmk6YIltXeS8/edit?gid=204737694#gid=204737694" target="_blank" rel="noopener noreferrer" class="text-[11px] font-bold text-blue-400 hover:underline flex items-center gap-1">
+              <span>Buka Sheet</span>
+              <i data-lucide="external-link" class="w-3 h-3"></i>
+            </a>
+          </div>
+          <ol class="list-decimal list-inside text-[11px] text-slate-300 space-y-1 leading-relaxed">
+            <li>Buka Google Sheet <strong>HOST N STUDIO JOGJIS 2026</strong>.</li>
+            <li>Klik tombol <strong>Share (Bagikan)</strong> di pojok kanan atas &rarr; ubah akses umum menjadi <strong>Anyone with the link (Viewer)</strong>, ATAU klik menu <strong>File &rarr; Share &rarr; Publish to web</strong> pilih tab <code class="text-amber-200">Dashboard_3Hari</code> format <strong>CSV</strong>.</li>
+            <li>Setelah aktif, klik <strong>Sync Sekarang</strong>. Jika sheet bersifat rahasia/internal, gunakan Tab <strong>2. Quick Paste dari Google Sheet</strong>.</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- Tab 2: Quick Paste dari Google Sheet -->
+      <div id="syncTabPaste" class="hidden p-5 space-y-4">
+        <div class="space-y-1.5">
+          <label class="block text-xs font-semibold text-slate-300">
+            Paste Langsung Baris dari Google Sheet (Format Tab-Separated atau CSV)
+          </label>
+          <p class="text-[11px] text-slate-400">
+            Blok baris data di Google Sheet (kolom <code>TANGGAL</code> s.d. <code>NOTE</code>), tekan <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-slate-200">Ctrl+C</kbd>, lalu <kbd class="px-1.5 py-0.5 bg-slate-800 rounded text-slate-200">Ctrl+V</kbd> di kotak bawah ini:
+          </p>
+          <textarea id="pasteDataTextarea" rows="7" placeholder="Contoh:
+22/11/2026	SUCI	08:00:00	4 Jam	12:00:00	HARVEST	2	START	END	Studio 5	07:00	WAITING	-
+22/11/2026	DHIA	08:00:00	3 Jam	11:00:00	KEDS	-	START	TIDAK	Studio 2	07:00	WAITING	-" class="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-blue-500"></textarea>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center justify-end gap-2.5">
+          <button onclick="processQuickPaste('append')" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span>Tambahkan ke Jadwal Ada</span>
+          </button>
+          <button onclick="processQuickPaste('replace')" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
+            <i data-lucide="replace" class="w-4 h-4"></i>
+            <span>Timpa Seluruh Jadwal</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 2: TAMBAH / EDIT SESI JADWAL                                    -->
+  <!-- ===================================================================== -->
+  <div id="sessionModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4 overflow-y-auto">
+    <div class="bg-[#111827] border border-slate-700 rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden my-auto">
+      <div class="px-5 py-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between">
+        <h3 id="sessionModalTitle" class="text-base font-bold text-white flex items-center gap-2">
+          <i data-lucide="edit-3" class="w-4 h-4 text-blue-400"></i>
+          <span>Edit Sesi Jadwal</span>
+        </h3>
+        <button onclick="closeModal('sessionModal')" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="sessionForm" onsubmit="saveSessionForm(event)" class="p-5 space-y-4">
+        <input type="hidden" id="editSessionId" />
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Tanggal (DD/MM/YYYY)</label>
+            <input type="text" id="formTanggal" required placeholder="20/11/2026" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Studio Actual</label>
+            <select id="formStudioActual" required class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+              <option value="Studio 1">Studio 1</option>
+              <option value="Studio 2">Studio 2</option>
+              <option value="Studio 3">Studio 3</option>
+              <option value="Studio 4">Studio 4</option>
+              <option value="Studio 5">Studio 5</option>
+              <option value="Studio 6">Studio 6</option>
+              <option value="Studio 7">Studio 7</option>
+              <option value="Studio 8">Studio 8</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Nama Host</label>
+            <input type="text" id="formHost" required placeholder="Contoh: SUCI" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white uppercase focus:outline-none focus:border-blue-500" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Brand</label>
+            <input type="text" id="formBrand" required placeholder="Contoh: BETADINE TIKTOK" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white uppercase focus:outline-none focus:border-blue-500" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Jam Mulai (START)</label>
+            <input type="text" id="formStart" required placeholder="08:00:00" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-blue-500" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Jam Selesai (END)</label>
+            <input type="text" id="formEnd" required placeholder="12:00:00" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-blue-500" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Durasi</label>
+            <input type="text" id="formDuration" required placeholder="4 Jam" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Jam Prep</label>
+            <input type="text" id="formPrep" placeholder="07:00 atau -" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-blue-500" />
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Maraton? (Alur Shift)</label>
+            <select id="formMaraton" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+              <option value="START">START (Buka Stream Baru)</option>
+              <option value="CONTINUOUS">CONTINUOUS (Estafet Tanpa Putus)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Last Session</label>
+            <select id="formLastSession" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+              <option value="TIDAK">TIDAK (Lanjut Host Berikutnya)</option>
+              <option value="END">END (Akhir Sesi Live)</option>
+              <option value="BREAK">BREAK (Jeda Istirahat)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Status / Switch</label>
+            <select id="formStatus" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
+              <option value="ON AIR">ON AIR</option>
+              <option value="ENDING SOON">ENDING SOON</option>
+              <option value="WAITING">WAITING</option>
+              <option value="WAITING STREAM">WAITING STREAM</option>
+              <option value="END STREAM">END STREAM</option>
+              <option value="FINISH">FINISH</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Nomor Studio (Kolom STUDIO)</label>
+            <input type="text" id="formStudioRef" placeholder="2 atau -" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Catatan (NOTE)</label>
+          <input type="text" id="formNote" placeholder="Contoh: UPLOAD GMV DARI HOST / ASET OBS FRAME" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500" />
+        </div>
+
+        <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-800">
+          <button type="button" onclick="closeModal('sessionModal')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition cursor-pointer">
+            Batal
+          </button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition shadow-lg shadow-blue-600/20 cursor-pointer">
+            Simpan Perubahan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 3: KONFIRMASI RESET DEFAULT                                     -->
+  <!-- ===================================================================== -->
+  <div id="resetConfirmModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+    <div class="bg-[#111827] border border-slate-700 rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
+      <div class="flex items-center gap-3 text-amber-400">
+        <div class="p-2.5 rounded-xl bg-amber-500/15">
+          <i data-lucide="alert-circle" class="w-6 h-6"></i>
+        </div>
+        <h3 class="text-base font-bold text-white">Reset ke Data Awal?</h3>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        Tindakan ini akan menghapus seluruh perubahan manual atau hasil paste lokal Anda dan mengembalikan jadwal ke <strong>51 baris data default</strong> dari tab <code class="text-blue-400">Dashboard_3Hari</code>.
+      </p>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeModal('resetConfirmModal')" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 cursor-pointer">Batal</button>
+        <button onclick="executeResetDefault()" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-xs font-bold text-white cursor-pointer">Ya, Reset Data</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- APPLICATION LOGIC                                                     -->
+  <!-- ===================================================================== -->
+  <script>
+    // -------------------------------------------------------------------------
+    // 1. DEFAULT DATASET (51 Baris dari Dashboard_3Hari)
+    // -------------------------------------------------------------------------
+    const DEFAULT_SCHEDULE_DATA = [
+      { id: 1, tanggal: "20/11/2026", host: "SUCI", start: "08:00:00", duration: "4 Jam", end: "12:00:00", brand: "HARVEST", studio: "2", maraton: "START", lastSession: "END", studioActual: "Studio 5", prep: "07:00", status: "END STREAM", note: "-" },
+      { id: 2, tanggal: "20/11/2026", host: "DHIA", start: "08:00:00", duration: "3 Jam", end: "11:00:00", brand: "KEDS", studio: "-", maraton: "START", lastSession: "TIDAK", studioActual: "Studio 2", prep: "07:00", status: "FINISH", note: "-" },
+      { id: 3, tanggal: "20/11/2026", host: "SEKAR", start: "08:00:00", duration: "4 Jam", end: "12:00:00", brand: "PASEO", studio: "5", maraton: "START", lastSession: "TIDAK", studioActual: "Studio 6", prep: "07:00", status: "FINISH", note: "ASET OBS FRAME" },
+      { id: 4, tanggal: "20/11/2026", host: "KEISA", start: "09:00:00", duration: "4 Jam", end: "13:00:00", brand: "BETADINE TIKTOK", studio: "7", maraton: "START", lastSession: "TIDAK", studioActual: "Studio 7", prep: "08:00", status: "FINISH", note: "Exclu Maybelline" },
+      { id: 5, tanggal: "20/11/2026", host: "RAHMA", start: "09:00:00", duration: "4 Jam", end: "13:00:00", brand: "RIPCURL", studio: "3", maraton: "START", lastSession: "BREAK", studioActual: "Studio 3", prep: "08:00", status: "FINISH", note: "Exclu Loreal" },
+      { id: 6, tanggal: "20/11/2026", host: "DEVY", start: "11:00:00", duration: "3 Jam", end: "14:00:00", brand: "BETADINE SHOPEE", studio: "8", maraton: "START", lastSession: "TIDAK", studioActual: "Studio 8", prep: "10:00", status: "FINISH", note: "-" },
+      { id: 7, tanggal: "20/11/2026", host: "NABILA", start: "11:00:00", duration: "3 Jam", end: "14:00:00", brand: "KEDS", studio: "-", maraton: "CONTINUOUS", lastSession: "TIDAK", studioActual: "Studio 2", prep: "-", status: "FINISH", note: "General Beauty" },
+      { id: 8, tanggal: "20/11/2026", host: "DEVINDA", start: "12:00:00", duration: "4 Jam", end: "16:00:00", brand: "PASEO", studio: "5", maraton: "CONTINUOUS", lastSession: "END", studioActual: "Studio 6", prep: "-", status: "END STREAM", note: "-" },
+      { id: 9, tanggal: "20/11/2026", host: "KIRANA", start: "13:00:00", duration: "2 Jam", end: "15:00:00", brand: "BETADINE TIKTOK", studio: "7", maraton: "CONTINUOUS", lastSession: "TIDAK", studioActual: "Studio 7", prep: "-", status: "FINISH", note: "-" },
+      { id: 10, tanggal: "20/11/2026", host: "BUNGA", start: "13:00:00", duration: "2 Jam", end: "15:00:00", brand: "ORAMI-UPDATE", studio: "-", maraton: "START", lastSession: "END", studioActual: "Studio 4", prep: "12:00", status: "END STREAM", note: "Laporan GMV" },
+      { id: 11, tanggal: "20/11/2026", host: "SYEFIRA", start: "14:00:00", duration: "4 Jam", end: "18:00:00", brand: "BETADINE SHOPEE", studio: "8", maraton: "CONTINUOUS", lastSession: "TIDAK", studioActual: "Studio 8", prep: "-", status: "FINISH", note: "JADWAL HOST UPDATE" },
+      { id: 12, tanggal: "20/11/2026", host: "SUCI", start: "14:00:00", duration: "2 Jam", end: "16:00:00", brand: "KEDS", studio: "-", maraton: "CONTINUOUS", lastSession: "TIDAK", studioActual: "Studio 2", prep: "-", status: "FINISH", note: "DAYLY BRAND ASET" },
+      { id: 13, tanggal: "20/11/2026", host: "RAHMA", start: "14:00:00", duration: "2 Jam", end: "16:00:00", brand: "RIPCURL", studio: "3", maraton: "START", lastSession: "BREAK", studioActual: "Studio 3", prep: "13:00", status: "FINISH", note: "ASEET V2" },
+      { id: 14, tanggal: "20/11/2026", host: "KEISA", start: "15:00:00", duration: "2 Jam", end: "17:00:00", brand: "BETADINE TIKTOK", studio: "7", maraton: "CONTINUOUS", lastSession: "TIDAK", studioActual: "Studio 7", prep: "-", status: "FINISH", note: "JADWAL SHIFT" },
+      { id: 15, tanggal: "20/11/2026", host: "NABILA", start: "16:00:00", duration: "3 Jam", end: "19:00:00", brand: "KEDS", studio: "-", maraton: "CONTINUOUS", lastSession: "TIDAK", studioActual: "Studio 2", prep: "-", status: "FINISH", note: "-" },
+      { id: 16, tanggal: "20/11/2026", host: "ELECTRA", start: "17:00:00", duration: "5 Jam", end: "22:00:00", brand: "BETADINE TIKTOK", studio: "7", maraton: "CONTINUOUS", lastSession: "END", studioActual: "Studio 7", prep: "-", status: "ON AIR", note: "UPLOAD BUKTI PREV" },
+      { id: 17, tanggal: "20/11/2026", host: "DEVINDA", start: "17:00:00", duration: "2 Jam", end: "19:00:00", brand: "HE!!O BY PASEO", studio: "5", maraton: "START", lastSession: "TIDAK", studioActual: "Studio 6", prep: "16:00", status: "FINISH", note: "GMV HOST" },
+      { id: 18, tanggal: "20/11/2026", host: "KIRANA", start: "17:00:00", duration: "3 Jam", end: "20:00:00", brand: "PURE PREMIUM CARE", studio: "2", maraton: "START", lastSession: "TIDAK", studioActual: "Studio 1", prep: "16:00", status: "FINISH", note: "-" },
+      { id: 19, tanggal: "20/11/2026", host: "BUNGA", start: "17:00:00", duration: "4 Jam", end: "21:00:00", brand: "RIPCURL", studio: "3", maraton: "START", lastSession: "END", studioActual: "Studio 3", prep: "16:00", status: "ENDING SOON", note: "UPLOAD GMV DARI HOST" },
+      { id: 20, tanggal: "20/11/2026", host: "Alifa", start: "18:00:00", duration: "2 Jam", end: "20:00:00", brand: "BETADINE SHOPEE", studio: "8", maraton: "CONTINUOUS", lastSession: "TIDAK", studioActual: "Studio 8", prep: "-", status: "FINISH", note: "REPOT UPDATE" },
+      { id: 21, tanggal: "20/11/2026", host: "MANDA", start: "19:00:00", duration: "3 Jam", end: "22:00:00", brand: "HE!!O BY PASEO", studio: "5", maraton: "CONTINUOUS", lastSession: "END", studioActual: "Studio 6", prep: "-", status: "ON AIR", note: "JADWAL MCN" },
+      { id: 22, tanggal: "20/11/2026", host: "PUTRI", start: "19:00:00", duration: "3 Jam", end: "22:00:00", brand: "KEDS", studio: "-", maraton: "CONTINUOUS", lastSession: "END", studioActual: "Studio 2", prep: "-", status: "ON AIR", note: "-" },
+      { id: 23, tanggal: "20/11/2026", host: "SYEFIRA", start: "20:00:00", duration: "2 Jam", end: "22:00:00", brand: "BETADINE SHOPEE", studio: "8", maraton: "CONTINUOUS", lastSession: "END", studioActual: "Studio 8", prep: "-", status: "ON AIR", note: "STATUS LIVE" },
+      { id: 24, tanggal: "20/11/2026", host: "LAILA", start: "20:00:00", duration: "2 Jam", end: "22:00:00", brand: "PURE PREMIUM CARE", studio: "2", maraton: "CONTINUOUS", lastSession: "END", studioActual: "Studio 1", prep: "-", status: "ON AIR", note: "-" },
+      { id: 25, tanggal: "20/11/2026", host: "Reta", start: "21:00:00", duration: "3 Jam", end: "00:00:00", brand: "MUSTIKA RATU", studio: "4", maraton: "START", lastSession: "END", studioActual: "Studio 5", prep: "20:00", status: "WAITING STREAM", note: "-" },
+      { id: 26, tanggal: "21/11/2026", host: "SUCI", start: "08:00:00", duration: "4 Jam", end: "12:00:00", brand: "HARVEST", studio: "2", maraton: "START", lastSession: "END", studioActual: "Studio 5", prep: "07:00", status: "WAITING", note: "-" },
+      { id: 27, tanggal: "21/11/2026", host: "DHIA", start: "08:00:00", duration: "2 Jam", end: "10:00:00", brand: "KEDS", studio: "-", maraton: "START", lastSession: "TIDAK", studioActual: "Studio 2", prep: "07:00", status: "WAITING", note: "-" },
+      { id: 28, tanggal: "21/11/2026", host: "SEKAR", start: "08:00:00", duration: "4 Jam", end: "12:00:00", brand: "PASEO", studio: "5", maraton: "START", lastSession: "TIDAK", studioActual: "Studio 6", prep: "07:00", status: "WAITING", note: "-" },
+      { id: 29, tanggal: "21/11/2026", host: "KEISA", start: "09:00:00", duration: "4 Jam", end: "13:00:00", brand: "BETADINE TIKTOK", studio: "7", maraton: "START", lastSession: "TIDAK", studioActual: "Studio 7", prep: "08:00", status: "WAITING", note: "-" },
+      { id: 30, tanggal: "21/11/2026", host: "BUNGA", start: "09:00:00", duration: "4 Jam", end: "13:00:00", brand: "RIPCURL", studio: "3", maraton: "START", lastSession: "BREAK", studioActual: "Studio 3", prep: "08:00", status: "WAITING", note: "-" },
+      { id: 31, tanggal: "21/11/2026", host: "NABILA", start: "10:00:00", duration: "4 Jam", end: "14:00:00", brand: "KEDS", studio: "-", maraton: "CONTINUOUS", lastSession: "TIDAK", studioActual: "Studio 2", prep: "-", status: "WAITING", note: "-" },
+      { id: 32, tanggal: "21/11/2026", host: "ESA", start: "11:00:00", duration: "3 Jam", end: "14:00:00", brand: "BETADINE SHOPEE", studio: "8", maraton: "START", lastSession: "TIDAK", studioActual: "Studio 8", prep: "10:00", status: "WAITING", note: "-" },
+      { id: 33, tanggal: "21/11/2026", host: "ENZEL", start: "12:00:00", duration: "4 Jam", end: "16:00:00", brand: "PASEO", studio: "5", maraton: "CONTINUOUS", lastSession: "END", studioActual: "Studio 6", prep: "-", status: "WAITING", note: "-" },
+      { id: 34, tanggal: "21/11/2026", host: "ADISTY", start: "13:00:00", duration: "2 Jam", end: "15:00:00", brand: "BETADINE TIKTOK", studio: "7", maraton: "CONTINUOUS", lastSession: "TIDAK", studioActual: "Studio 7", prep: "-", status: "WAITING", note: "-" },
+      { id: 35, tanggal: "21/11/2026", host: "RAHMA", start: "13:00:00", duration: "2 Jam", end: "15:00:00", brand: "ORAMI-UPDATE", studio: "-", maraton: "START", lastSession: "TIDAK", studioActual: "Studio 4", prep: "12:00", status: "WAITING", note: "-" },
+      { id: 36, tanggal: "21/11/2026", host: "SYEFIRA", start: "14:00:00", duration: "2 Jam", end: "16:00:00", brand: "BETADINE SHOPEE", studio: "8", maraton: "CONTINUOUS", lastSession: "TIDAK", studioActual: "Studio 8", prep: "-", status: "WAITING", note: "-" },
+      { id: 37, tanggal: "21/11/2026", host: "SUCI", start: "14:00:00", duration: "2 Jam", end: "16:00:00", brand: "KEDS", studio: "-", maraton: "CONTINUOUS", lastSession: "TIDAK", studioActual: "Studio 2", prep: "-", status: "WAITING", note: "-" },
+      { id: 38, tanggal: "21/11/2026", host: "BUNGA", start: "14:00:00", duration: "2 Jam", end: "16:00:00", brand: "RIPCURL", studio: "3", maraton: "START", lastSession: "BREAK", studioActual: "Studio 3", prep: "13:00", status: "WAITING", note: "-" },
+      { id: 39, tanggal: "21/11/2026", host: "MELI", start: "15:00:00", duration: "2 Jam", end: "17:00:00", brand: "BETADINE TIKTOK", studio: "7", maraton: "CONTINUOUS", lastSession: "TIDAK", studioActual: "Studio 7", prep: "-", status: "WAITING", note: "-" },
+      { id: 40, tanggal: "21/11/2026", host: "ELECTRA", start: "15:00:00", duration: "2 Jam", end: "17:00:00", brand: "ORAMI-UPDATE", studio: "-", maraton: "CONTINUOUS", lastSession: "BREAK", studioActual: "Studio 4", prep: "-", status: "WAITING", note: "-" },
+      { id: 41, tanggal: "21/11/2026", host: "ESA", start: "16:00:00", duration: "2 Jam", end: "18:00:00", brand: "BETADINE SHOPEE", studio: "8", maraton: "CONTINUOUS", lastSession: "TIDAK", studioActual: "Studio 8", prep: "-", status: "WAITING", note: "-" },
+      { id: 42, tanggal: "21/11/2026", host: "NABILA", start: "16:00:00", duration: "2 Jam", end: "18:00:00", brand: "KEDS", studio: "-", maraton: "CONTINUOUS", lastSession: "TIDAK", studioActual: "Studio 2", prep: "-", status: "WAITING", note: "-" },
+      { id: 43, tanggal: "21/11/2026", host: "RETA", start: "17:00:00", duration: "2 Jam", end: "19:00:00", brand: "BETADINE TIKTOK", studio: "7", maraton: "CONTINUOUS", lastSession: "TIDAK", studioActual: "Studio 7", prep: "-", status: "WAITING", note: "-" },
+      { id: 44, tanggal: "21/11/2026", host: "ADISTY", start: "17:00:00", duration: "2 Jam", end: "19:00:00", brand: "PURE PREMIUM CARE", studio: "2", maraton: "START", lastSession: "TIDAK", studioActual: "Studio 1", prep: "16:00", status: "WAITING", note: "-" },
+      { id: 45, tanggal: "21/11/2026", host: "RAHMA", start: "17:00:00", duration: "4 Jam", end: "21:00:00", brand: "RIPCURL", studio: "3", maraton: "START", lastSession: "END", studioActual: "Studio 3", prep: "16:00", status: "WAITING", note: "-" },
+      { id: 46, tanggal: "21/11/2026", host: "SYEFIRA", start: "18:00:00", duration: "4 Jam", end: "22:00:00", brand: "BETADINE SHOPEE", studio: "8", maraton: "CONTINUOUS", lastSession: "END", studioActual: "Studio 8", prep: "-", status: "WAITING", note: "-" },
+      { id: 47, tanggal: "21/11/2026", host: "ENZEL", start: "18:00:00", duration: "2 Jam", end: "20:00:00", brand: "KEDS", studio: "-", maraton: "CONTINUOUS", lastSession: "TIDAK", studioActual: "Studio 2", prep: "-", status: "WAITING", note: "-" },
+      { id: 48, tanggal: "21/11/2026", host: "ESA", start: "18:00:00", duration: "1 Jam", end: "19:00:00", brand: "ORAMI-UPDATE", studio: "-", maraton: "START", lastSession: "TIDAK", studioActual: "Studio 4", prep: "17:00", status: "WAITING", note: "-" },
+      { id: 49, tanggal: "21/11/2026", host: "ELECTRA", start: "19:00:00", duration: "3 Jam", end: "22:00:00", brand: "BETADINE TIKTOK", studio: "7", maraton: "CONTINUOUS", lastSession: "END", studioActual: "Studio 7", prep: "-", status: "WAITING", note: "-" },
+      { id: 50, tanggal: "21/11/2026", host: "MANDA", start: "19:00:00", duration: "3 Jam", end: "22:00:00", brand: "HE!!O BY PASEO", studio: "5", maraton: "START", lastSession: "END", studioActual: "Studio 6", prep: "18:00", status: "WAITING", note: "-" },
+      { id: 51, tanggal: "21/11/2026", host: "ADISTY", start: "19:00:00", duration: "1 Jam", end: "20:00:00", brand: "ORAMI-UPDATE", studio: "-", maraton: "CONTINUOUS", lastSession: "END", studioActual: "Studio 4", prep: "-", status: "WAITING", note: "-" }
+    ];
+
+    const STORAGE_KEY = "jogjis_studio_control_v1";
+    const SETTINGS_KEY = "jogjis_studio_settings_v1";
+
+    // Application State
+    let scheduleData = [];
+    let autoEngineEnabled = true;
+    let autoRefreshTimer = null;
+
+    // -------------------------------------------------------------------------
+    // 2. INITIALIZATION & STORAGE
+    // -------------------------------------------------------------------------
+    function initApp() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            scheduleData = parsed;
+          } else {
+            scheduleData = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE_DATA));
+          }
+        } else {
+          scheduleData = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE_DATA));
+        }
+
+        const savedSettings = localStorage.getItem(SETTINGS_KEY);
+        if (savedSettings) {
+          const st = JSON.parse(savedSettings);
+          if (typeof st.autoEngineEnabled === 'boolean') autoEngineEnabled = st.autoEngineEnabled;
+          if (st.sheetCsvUrl) document.getElementById('sheetCsvUrlInput').value = st.sheetCsvUrl;
+          if (st.lastSyncLabel) document.getElementById('lastSyncText').textContent = st.lastSyncLabel;
+        }
+      } catch (e) {
+        console.error("Gagal membaca localStorage:", e);
+        scheduleData = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE_DATA));
+      }
+
+      updateEngineButtonUI();
+      populateDateFilterOptions();
+      updateClockAndEngine();
+      renderAll();
+      lucide.createIcons();
+
+      // Start 1-second real-time ticker
+      setInterval(() => {
+        updateClockAndEngine();
+      }, 1000);
+    }
+
+    function saveToLocalStorage(syncLabel = null) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(scheduleData));
+        const currentSettings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+        currentSettings.autoEngineEnabled = autoEngineEnabled;
+        currentSettings.sheetCsvUrl = document.getElementById('sheetCsvUrlInput').value;
+        if (syncLabel) {
+          currentSettings.lastSyncLabel = syncLabel;
+          document.getElementById('lastSyncText').textContent = syncLabel;
+        }
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(currentSettings));
+      } catch (e) {
+        console.error("Gagal menyimpan ke localStorage:", e);
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // 3. REAL-TIME WIB CLOCK & AUTO-STATUS ENGINE
+    // -------------------------------------------------------------------------
+    function getWIBNow() {
+      // Menggunakan waktu lokal perangkat dengan format WIB (UTC+7)
+      const now = new Date();
+      const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+      return new Date(utc + (3600000 * 7));
+    }
+
+    function formatTimeHHMMSS(dateObj) {
+      const h = String(dateObj.getHours()).padStart(2, '0');
+      const m = String(dateObj.getMinutes()).padStart(2, '0');
+      const s = String(dateObj.getSeconds()).padStart(2, '0');
+      return `${h}:${m}:${s}`;
+    }
+
+    function formatDateDDMMYYYY(dateObj) {
+      const d = String(dateObj.getDate()).padStart(2, '0');
+      const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const y = dateObj.getFullYear();
+      return `${d}/${m}/${y}`;
+    }
+
+    function timeStringToMinutes(timeStr) {
+      if (!timeStr || timeStr === "-") return null;
+      const parts = timeStr.trim().split(':');
+      if (parts.length < 2) return null;
+      const h = parseInt(parts[0], 10) || 0;
+      const m = parseInt(parts[1], 10) || 0;
+      return h * 60 + m;
+    }
+
+    function getReferenceDateStr(wibNow) {
+      const selector = document.getElementById('activeDateReference').value;
+      if (selector === 'AUTO') {
+        const todayStr = formatDateDDMMYYYY(wibNow);
+        // Cek apakah todayStr ada di data, jika tidak fallback ke tanggal pertama di data
+        const exists = scheduleData.some(item => item.tanggal === todayStr);
+        return exists ? todayStr : (scheduleData[0]?.tanggal || todayStr);
+      }
+      return selector;
+    }
+
+    function computeDynamicStatus(session, wibNow, refDateStr) {
+      if (!autoEngineEnabled) {
+        return session.status;
+      }
+
+      // Bandingkan tanggal sesi terhadap tanggal acuan
+      const parseD = (str) => {
+        const [d, m, y] = str.split('/').map(Number);
+        return new Date(y, m - 1, d).getTime();
+      };
+
+      const sessDateMs = parseD(session.tanggal);
+      const refDateMs = parseD(refDateStr);
+
+      if (isNaN(sessDateMs) || isNaN(refDateMs)) return session.status;
+
+      // Jika tanggal sesi sebelum tanggal acuan -> sudah selesai
+      if (sessDateMs < refDateMs) {
+        return session.lastSession === 'END' ? 'END STREAM' : 'FINISH';
+      }
+      // Jika tanggal sesi setelah tanggal acuan -> masih menunggu
+      if (sessDateMs > refDateMs) {
+        return 'WAITING';
+      }
+
+      // Tanggal sama dengan tanggal acuan -> evaluasi jam WIB sekarang
+      const nowMins = wibNow.getHours() * 60 + wibNow.getMinutes();
+      const startMins = timeStringToMinutes(session.start);
+      let endMins = timeStringToMinutes(session.end);
+
+      if (startMins === null || endMins === null) return session.status;
+
+      // Tangani sesi lintas tengah malam (misal 21:00:00 s.d. 00:00:00 -> 1440 menit)
+      if (endMins === 0 && startMins > 0) {
+        endMins = 24 * 60;
+      } else if (endMins < startMins) {
+        endMins += 24 * 60;
+      }
+
+      if (nowMins >= endMins) {
+        return session.lastSession === 'END' ? 'END STREAM' : 'FINISH';
+      }
+
+      if (nowMins >= startMins && nowMins < endMins) {
+        const remaining = endMins - nowMins;
+        if (remaining <= 30) {
+          return 'ENDING SOON';
+        }
+        return 'ON AIR';
+      }
+
+      // Belum mulai
+      const prepMins = timeStringToMinutes(session.prep);
+      if (prepMins !== null && nowMins >= prepMins && nowMins < startMins) {
+        return 'WAITING STREAM';
+      }
+      if (startMins - nowMins <= 60) {
+        return 'WAITING STREAM';
+      }
+      return 'WAITING';
+    }
+
+    function getRemainingCountdown(session, wibNow) {
+      const nowSecs = wibNow.getHours() * 3600 + wibNow.getMinutes() * 60 + wibNow.getSeconds();
+      const startMins = timeStringToMinutes(session.start);
+      let endMins = timeStringToMinutes(session.end);
+      if (startMins === null || endMins === null) return "--:--";
+      if (endMins === 0 && startMins > 0) endMins = 1440;
+      else if (endMins < startMins) endMins += 1440;
+
+      const endSecs = endMins * 60;
+      const startSecs = startMins * 60;
+
+      if (nowSecs >= startSecs && nowSecs < endSecs) {
+        const diff = endSecs - nowSecs;
+        const hh = Math.floor(diff / 3600);
+        const mm = Math.floor((diff % 3600) / 60);
+        const ss = diff % 60;
+        return `Sisa ${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}:${String(ss).padStart(2, '0')}`;
+      } else if (nowSecs < startSecs) {
+        const diff = startSecs - nowSecs;
+        const hh = Math.floor(diff / 3600);
+        const mm = Math.floor((diff % 3600) / 60);
+        return `Mulai dlm ${hh > 0 ? hh + 'j ' : ''}${mm}m`;
+      }
+      return "Selesai";
+    }
+
+    let lastRenderedMinute = -1;
+    function updateClockAndEngine() {
+      const wibNow = getWIBNow();
+      document.getElementById('liveClock').textContent = formatTimeHHMMSS(wibNow);
+
+      const hariNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+      const bulanNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+      const datePretty = `${hariNames[wibNow.getDay()]}, ${wibNow.getDate()} ${bulanNames[wibNow.getMonth()]} ${wibNow.getFullYear()}`;
+      document.getElementById('liveDateDisplay').textContent = datePretty;
+
+      // Update countdowns every second on studio cards
+      const refDateStr = getReferenceDateStr(wibNow);
+      for (let i = 1; i <= 8; i++) {
+        const cdEl = document.getElementById(`studioCountdown_${i}`);
+        if (cdEl && cdEl.dataset.sessionId) {
+          const sess = scheduleData.find(s => String(s.id) === cdEl.dataset.sessionId);
+          if (sess) {
+            cdEl.textContent = getRemainingCountdown(sess, wibNow);
+          }
+        }
+      }
+
+      // Re-render full grid & table when minute changes if autoEngineEnabled
+      if (autoEngineEnabled && wibNow.getMinutes() !== lastRenderedMinute) {
+        lastRenderedMinute = wibNow.getMinutes();
+        renderAll();
+      }
+    }
+
+    function toggleEngineMode() {
+      autoEngineEnabled = !autoEngineEnabled;
+      updateEngineButtonUI();
+      saveToLocalStorage();
+      renderAll();
+      showToast(
+        autoEngineEnabled
+          ? "Mode Auto-Status ON: Status sesi otomatis mengikuti jam WIB."
+          : "Mode Manual Override: Anda bebas mengubah status sesi secara manual.",
+        "info"
+      );
+    }
+
+    function updateEngineButtonUI() {
+      const btn = document.getElementById('engineModeBtn');
+      const dot = document.getElementById('engineDot');
+      const label = document.getElementById('engineLabel');
+      if (autoEngineEnabled) {
+        btn.className = "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer bg-emerald-500/15 text-emerald-400 border-emerald-500/30";
+        dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+        label.textContent = "Auto-Status: ON";
+      } else {
+        btn.className = "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer bg-amber-500/15 text-amber-300 border-amber-500/30";
+        dot.className = "w-2 h-2 rounded-full bg-amber-400";
+        label.textContent = "Manual Override";
+      }
+    }
+
+    function handleReferenceDateChange() {
+      const val = document.getElementById('activeDateReference').value;
+      if (val !== 'AUTO') {
+        document.getElementById('filterDate').value = val;
+      }
+      renderAll();
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. RENDERING: KPI, 8 STUDIO CARDS & MASTER SCHEDULE TABLE
+    // -------------------------------------------------------------------------
+    function populateDateFilterOptions() {
+      const uniqueDates = [...new Set(scheduleData.map(s => s.tanggal))].filter(Boolean);
+      const filterDateEl = document.getElementById('filterDate');
+      const refDateEl = document.getElementById('activeDateReference');
+
+      const currentFilter = filterDateEl.value;
+      const currentRef = refDateEl.value;
+
+      filterDateEl.innerHTML = `<option value="ALL">Semua Tanggal Upcoming</option>` +
+        uniqueDates.map(d => `<option value="${d}">${d}</option>`).join('');
+
+      refDateEl.innerHTML = `<option value="AUTO">Tgl: Otomatis Hari Ini</option>` +
+        uniqueDates.map(d => `<option value="${d}">Tgl Acuan: ${d}</option>`).join('');
+
+      if (uniqueDates.includes(currentFilter) || currentFilter === 'ALL') {
+        filterDateEl.value = currentFilter;
+      } else {
+        filterDateEl.value = 'ALL';
+      }
+
+      if (uniqueDates.includes(currentRef) || currentRef === 'AUTO') {
+        refDateEl.value = currentRef;
+      } else if (uniqueDates.length > 0) {
+        refDateEl.value = uniqueDates[0];
+      }
+    }
+
+    function getStatusBadgeHTML(status, clickable = false, sessionId = null) {
+      const normalized = (status || 'WAITING').toUpperCase().trim();
+      let classes = "bg-slate-800 text-slate-300 border-slate-700";
+      let dotHTML = `<span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>`;
+
+      if (normalized === 'ON AIR') {
+        classes = "bg-red-500/20 text-red-300 border-red-500/50 shadow-sm shadow-red-500/20";
+        dotHTML = `<span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>`;
+      } else if (normalized === 'ENDING SOON') {
+        classes = "bg-amber-500/20 text-amber-300 border-amber-500/50";
+        dotHTML = `<span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>`;
+      } else if (normalized === 'WAITING' || normalized === 'WAITING STREAM') {
+        classes = "bg-sky-500/15 text-sky-300 border-sky-500/40";
+        dotHTML = `<span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>`;
+      } else if (normalized === 'END STREAM') {
+        classes = "bg-purple-500/20 text-purple-300 border-purple-500/40";
+        dotHTML = `<span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>`;
+      } else if (normalized === 'FINISH') {
+        classes = "bg-emerald-500/15 text-emerald-300 border-emerald-500/30";
+        dotHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>`;
+      }
+
+      const clickAttr = clickable ? `onclick="cycleSessionStatus(${sessionId})" title="Klik untuk ganti status cepat"` : "";
+      const cursorClass = clickable ? "cursor-pointer hover:brightness-125 active:scale-95 transition" : "";
+
+      return `<span ${clickAttr} class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold tracking-wide border ${classes} ${cursorClass}">
+        ${dotHTML}
+        <span>${normalized}</span>
+      </span>`;
+    }
+
+    function renderAll() {
+      const wibNow = getWIBNow();
+      const refDateStr = getReferenceDateStr(wibNow);
+      document.getElementById('studioGridDateBadge').textContent = refDateStr;
+
+      // Enrich data with effective status
+      const enriched = scheduleData.map(item => ({
+        ...item,
+        effectiveStatus: computeDynamicStatus(item, wibNow, refDateStr)
+      }));
+
+      // Update KPI Counters (based on refDateStr)
+      const refDaySessions = enriched.filter(s => s.tanggal === refDateStr);
+      const onAirCount = refDaySessions.filter(s => s.effectiveStatus === 'ON AIR' || s.effectiveStatus === 'ENDING SOON').length;
+      const endingSoonCount = refDaySessions.filter(s => s.effectiveStatus === 'ENDING SOON').length;
+      const waitingCount = refDaySessions.filter(s => s.effectiveStatus === 'WAITING' || s.effectiveStatus === 'WAITING STREAM').length;
+      const continuousCount = refDaySessions.filter(s => s.maraton === 'CONTINUOUS').length;
+      const finishCount = refDaySessions.filter(s => s.effectiveStatus === 'FINISH' || s.effectiveStatus === 'END STREAM').length;
+
+      document.getElementById('statOnAir').textContent = `${onAirCount} / 8`;
+      document.getElementById('statEndingSoon').textContent = endingSoonCount;
+      document.getElementById('statWaiting').textContent = waitingCount;
+      document.getElementById('statContinuous').textContent = continuousCount;
+      document.getElementById('statFinish').textContent = finishCount;
+      document.getElementById('statTotal').textContent = scheduleData.length;
+
+      renderStudioGrid(refDaySessions, wibNow);
+      renderScheduleTable(enriched);
+      lucide.createIcons();
+    }
+
+    function renderStudioGrid(daySessions, wibNow) {
+      const gridEl = document.getElementById('studioGrid');
+      let cardsHTML = '';
+
+      for (let num = 1; num <= 8; num++) {
+        const studioName = `Studio ${num}`;
+        const studioSessions = daySessions
+          .filter(s => (s.studioActual || '').toLowerCase() === studioName.toLowerCase())
+          .sort((a, b) => (timeStringToMinutes(a.start) || 0) - (timeStringToMinutes(b.start) || 0));
+
+        // Cari sesi yang sedang ON AIR atau ENDING SOON
+        let activeSession = studioSessions.find(s => s.effectiveStatus === 'ON AIR' || s.effectiveStatus === 'ENDING SOON');
+        // Cari sesi berikutnya (WAITING / WAITING STREAM)
+        let nextSession = studioSessions.find(s => s.effectiveStatus === 'WAITING' || s.effectiveStatus === 'WAITING STREAM');
+
+        // Jika tidak ada yang aktif, tampilkan nextSession sebagai sorotan utama atau sesi terakhir selesai
+        const lastFinished = [...studioSessions].reverse().find(s => s.effectiveStatus === 'FINISH' || s.effectiveStatus === 'END STREAM');
+
+        let cardBorderClass = "border-slate-800 bg-[#111827]";
+        let headerAccent = "bg-slate-800/80 text-slate-300";
+
+        if (activeSession) {
+          if (activeSession.effectiveStatus === 'ENDING SOON') {
+            cardBorderClass = "border-amber-500/60 bg-[#161c2c] glow-ending";
+            headerAccent = "bg-amber-500/20 text-amber-300";
+          } else {
+            cardBorderClass = "border-red-500/60 bg-[#171929] glow-onair";
+            headerAccent = "bg-red-500/20 text-red-300";
+          }
+        } else if (nextSession) {
+          cardBorderClass = "border-sky-500/40 bg-[#111827] glow-prep";
+          headerAccent = "bg-sky-500/15 text-sky-300";
+        }
+
+        const displaySession = activeSession || nextSession;
+
+        cardsHTML += `
+          <div class="rounded-2xl border ${cardBorderClass} p-4 flex flex-col justify-between transition-all duration-300 relative overflow-hidden">
+            <!-- Top Row: Studio Badge & Status -->
+            <div>
+              <div class="flex items-center justify-between gap-2 mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="px-2.5 py-1 rounded-lg text-xs font-extrabold tracking-wide ${headerAccent}">
+                    STUDIO ${num}
+                  </span>
+                  ${displaySession ? `
+                    <span class="text-[11px] font-mono text-slate-400">
+                      ${displaySession.start.slice(0,5)} - ${displaySession.end.slice(0,5)}
+                    </span>
+                  ` : ''}
+                </div>
+                ${activeSession
+                  ? getStatusBadgeHTML(activeSession.effectiveStatus, true, activeSession.id)
+                  : nextSession
+                    ? getStatusBadgeHTML(nextSession.effectiveStatus, true, nextSession.id)
+                    : `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700">STANDBY</span>`
+                }
+              </div>
+
+              ${displaySession ? `
+                <!-- Active / Upcoming Brand & Host -->
+                <div class="space-y-2">
+                  <div>
+                    <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      ${activeSession ? 'BRAND SEDANG LIVE' : 'JADWAL BERIKUTNYA'}
+                    </div>
+                    <h3 class="text-base font-extrabold text-white truncate" title="${displaySession.brand}">
+                      ${displaySession.brand}
+                    </h3>
+                  </div>
+
+                  <div class="flex items-center justify-between bg-slate-900/90 border border-slate-800/90 rounded-xl px-3 py-2">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <div class="w-7 h-7 rounded-lg bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold text-xs shrink-0">
+                        ${displaySession.host.slice(0, 2).toUpperCase()}
+                      </div>
+                      <div class="truncate">
+                        <div class="text-xs font-bold text-white truncate">${displaySession.host}</div>
+                        <div class="text-[10px] text-slate-400">${displaySession.duration} • Prep: ${displaySession.prep}</div>
+                      </div>
+                    </div>
+                    <div id="studioCountdown_${num}" data-session-id="${displaySession.id}" class="text-[11px] font-mono font-bold ${activeSession ? (activeSession.effectiveStatus === 'ENDING SOON' ? 'text-amber-400' : 'text-red-400') : 'text-sky-400'} shrink-0 ml-2">
+                      ${getRemainingCountdown(displaySession, wibNow)}
+                    </div>
+                  </div>
+
+                  <!-- Maraton / Shift Badges -->
+                  <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    ${displaySession.maraton === 'CONTINUOUS'
+                      ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40"><i data-lucide="repeat" class="w-3 h-3"></i> CONTINUOUS</span>`
+                      : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30"><i data-lucide="play" class="w-3 h-3"></i> START</span>`
+                    }
+                    ${displaySession.lastSession === 'END'
+                      ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">LAST: END</span>`
+                      : displaySession.lastSession === 'BREAK'
+                        ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">BREAK</span>`
+                        : `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-800 text-slate-400">ESTAFET LANJUT</span>`
+                    }
+                  </div>
+                </div>
+              ` : `
+                <!-- Standby / All Done State -->
+                <div class="py-5 text-center bg-slate-900/50 rounded-xl border border-dashed border-slate-800">
+                  <p class="text-xs font-semibold text-slate-400">Tidak ada sesi aktif saat ini</p>
+                  ${lastFinished ? `<p class="text-[11px] text-slate-500 mt-1">Terakhir: ${lastFinished.brand} (${lastFinished.host})</p>` : `<p class="text-[11px] text-slate-500 mt-1">Studio kosong pada tanggal ini</p>`}
+                </div>
+              `}
+            </div>
+
+            <!-- Footer: Next Up -->
+            <div class="mt-3 pt-2.5 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+              ${activeSession && nextSession ? `
+                <div class="truncate text-slate-300">
+                  <span class="text-slate-500 font-semibold">Next:</span>
+                  <strong class="text-sky-300">${nextSession.host}</strong> (${nextSession.start.slice(0,5)})
+                </div>
+              ` : `
+                <div class="truncate text-slate-500">
+                  ${studioSessions.length > 0 ? `Total ${studioSessions.length} sesi hari ini` : 'Tidak ada jadwal lanjutan'}
+                </div>
+              `}
+              <button onclick="filterByStudio('${studioName}')" class="text-blue-400 hover:text-blue-300 font-semibold shrink-0 ml-2 cursor-pointer">
+                Jadwal &rarr;
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      gridEl.innerHTML = cardsHTML;
+    }
+
+    function renderScheduleTable(enrichedData) {
+      const searchVal = document.getElementById('searchInput').value.toLowerCase().trim();
+      const dateVal = document.getElementById('filterDate').value;
+      const studioVal = document.getElementById('filterStudio').value;
+      const statusVal = document.getElementById('filterStatus').value;
+      const maratonVal = document.getElementById('filterMaraton').value;
+
+      // Filter utama: HANYA sesi Upcoming Live (WAITING / WAITING STREAM / PREP)
+      const upcomingAll = enrichedData.filter(item => {
+        const st = (item.effectiveStatus || '').toUpperCase().trim();
+        return st === 'WAITING' || st === 'WAITING STREAM' || st === 'PREP';
+      });
+
+      // Update badge jumlah total Upcoming Live pada header tabel
+      const upcomingBadgeCountEl = document.getElementById('upcomingBadgeCount');
+      if (upcomingBadgeCountEl) {
+        upcomingBadgeCountEl.textContent = `${upcomingAll.length} Upcoming`;
+      }
+
+      const filtered = upcomingAll.filter(item => {
+        if (dateVal !== 'ALL' && item.tanggal !== dateVal) return false;
+        if (studioVal !== 'ALL' && (item.studioActual || '').toLowerCase() !== studioVal.toLowerCase()) return false;
+        if (statusVal !== 'ALL') {
+          if (statusVal === 'WAITING_ONLY' && item.effectiveStatus !== 'WAITING') return false;
+          if (statusVal === 'WAITING_STREAM' && item.effectiveStatus !== 'WAITING STREAM' && item.effectiveStatus !== 'PREP') return false;
+        }
+        if (maratonVal !== 'ALL') {
+          if (maratonVal === 'CONTINUOUS' && item.maraton !== 'CONTINUOUS') return false;
+          if (maratonVal === 'START' && item.maraton !== 'START') return false;
+          if (maratonVal === 'LAST_END' && item.lastSession !== 'END') return false;
+        }
+        if (searchVal) {
+          const hay = `${item.host} ${item.brand} ${item.note} ${item.studioActual}`.toLowerCase();
+          if (!hay.includes(searchVal)) return false;
+        }
+        return true;
+      });
+
+      const tbody = document.getElementById('scheduleTableBody');
+      const emptyState = document.getElementById('emptyState');
+
+      document.getElementById('visibleCount').textContent = filtered.length;
+      document.getElementById('totalCountFooter').textContent = upcomingAll.length;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+
+      tbody.innerHTML = filtered.map(row => {
+        const isPrepSoon = row.effectiveStatus === 'WAITING STREAM' || row.effectiveStatus === 'PREP';
+        const rowHighlight = isPrepSoon
+          ? 'bg-sky-500/[0.06] hover:bg-sky-500/[0.11]'
+          : row.maraton === 'CONTINUOUS'
+            ? 'bg-purple-500/[0.02] hover:bg-slate-800/60'
+            : 'hover:bg-slate-800/60';
+
+        return `
+          <tr class="${rowHighlight} transition-colors">
+            <td class="py-3 px-4 font-mono text-xs text-slate-300 whitespace-nowrap">${row.tanggal}</td>
+            <td class="py-3 px-4 whitespace-nowrap">
+              <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-800 text-white border border-slate-700">
+                ${row.studioActual}
+              </span>
+            </td>
+            <td class="py-3 px-4 whitespace-nowrap">
+              <div class="font-mono text-xs font-bold text-white">${row.start.slice(0,5)} - ${row.end.slice(0,5)}</div>
+              <div class="text-[11px] text-slate-400">${row.duration}</div>
+            </td>
+            <td class="py-3 px-4">
+              <span class="font-bold text-xs text-blue-300 tracking-wide">${row.brand}</span>
+            </td>
+            <td class="py-3 px-4 whitespace-nowrap">
+              <div class="flex items-center gap-2">
+                <span class="w-6 h-6 rounded-md bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-bold text-slate-200">
+                  ${row.host.slice(0, 2).toUpperCase()}
+                </span>
+                <span class="font-bold text-xs text-white">${row.host}</span>
+              </div>
+            </td>
+            <td class="py-3 px-4 whitespace-nowrap">
+              <div class="flex items-center gap-1.5">
+                ${row.maraton === 'CONTINUOUS'
+                  ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">CONTINUOUS</span>`
+                  : `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">START</span>`
+                }
+                ${row.lastSession === 'END'
+                  ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">END</span>`
+                  : row.lastSession === 'BREAK'
+                    ? `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">BREAK</span>`
+                    : `<span class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-400">TIDAK</span>`
+                }
+              </div>
+            </td>
+            <td class="py-3 px-4 font-mono text-xs text-slate-400 whitespace-nowrap">${row.prep}</td>
+            <td class="py-3 px-4 whitespace-nowrap">
+              ${getStatusBadgeHTML(row.effectiveStatus, true, row.id)}
+            </td>
+            <td class="py-3 px-4 text-xs max-w-[200px] truncate ${row.note && row.note !== '-' ? 'text-amber-300 font-medium' : 'text-slate-500'}" title="${row.note}">
+              ${row.note || '-'}
+            </td>
+            <td class="py-3 px-4 text-right whitespace-nowrap">
+              <div class="inline-flex items-center gap-1">
+                <button onclick="openEditSessionModal(${row.id})" class="p-1.5 rounded-lg text-slate-400 hover:text-blue-400 hover:bg-slate-800 transition cursor-pointer" title="Edit Sesi">
+                  <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                </button>
+                <button onclick="deleteSession(${row.id})" class="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-slate-800 transition cursor-pointer" title="Hapus Sesi">
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterByStudio(studioName) {
+      document.getElementById('filterStudio').value = studioName;
+      renderAll();
+      document.getElementById('scheduleTableBody').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. CONTINUOUS UPDATE MECHANISMS (GOOGLE SHEET SYNC, QUICK PASTE, INLINE)
+    // -------------------------------------------------------------------------
+    async function syncFromGoogleSheet(isQuickHeader = false) {
+      const url = document.getElementById('sheetCsvUrlInput').value.trim();
+      const feedbackBox = document.getElementById('syncFeedbackBox');
+      const btn = isQuickHeader ? document.getElementById('headerQuickSyncBtn') : document.getElementById('modalSyncBtn');
+
+      if (!url) {
+        showToast("Masukkan URL CSV Google Sheet terlebih dahulu.", "error");
+        return;
+      }
+
+      const originalBtnHTML = btn.innerHTML;
+      btn.disabled = true;
+      btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Menarik Data...</span>`;
+      lucide.createIcons();
+
+      try {
+        const cacheBusterUrl = url + (url.includes('?') ? '&' : '?') + '_t=' + Date.now();
+        const response = await fetch(cacheBusterUrl);
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: Pastikan Google Sheet sudah di-Share Public / Publish to Web.`);
+        }
+
+        const csvText = await response.text();
+        // Deteksi jika Google mengembalikan halaman login HTML (artinya sheet masih private)
+        if (csvText.trim().startsWith('<!DOCTYPE html') || csvText.includes('accounts.google.com')) {
+          throw new Error("Sheet masih berstatus Private (meminta login Google). Aktifkan 'Anyone with the link' atau gunakan fitur Quick Paste.");
+        }
+
+        const parsedRows = parseDelimitedSchedule(csvText);
+        if (parsedRows.length === 0) {
+          throw new Error("Tidak ditemukan baris jadwal valid pada CSV tersebut.");
+        }
+
+        scheduleData = parsedRows;
+        const nowStr = formatTimeHHMMSS(getWIBNow());
+        const syncLabel = `Synced Sheet (${nowStr} WIB)`;
+        saveToLocalStorage(syncLabel);
+        populateDateFilterOptions();
+        renderAll();
+
+        if (feedbackBox) {
+          feedbackBox.className = "rounded-xl p-3 text-xs border bg-emerald-500/15 border-emerald-500/40 text-emerald-300 block";
+          feedbackBox.innerHTML = `<strong>Berhasil!</strong> Menarik <strong>${parsedRows.length} baris</strong> jadwal terbaru dari Google Sheet pada ${nowStr} WIB.`;
+        }
+        showToast(`Berhasil sinkronisasi ${parsedRows.length} jadwal dari Google Sheet!`, "success");
+      } catch (err) {
+        console.error("Sync Error:", err);
+        if (feedbackBox) {
+          feedbackBox.className = "rounded-xl p-3 text-xs border bg-red-500/15 border-red-500/40 text-red-300 block";
+          feedbackBox.innerHTML = `<strong>Gagal Sync Otomatis:</strong> ${err.message}`;
+        }
+        showToast("Gagal menarik CSV (Sheet masih private). Lihat panduan atau gunakan Quick Paste.", "error");
+        if (isQuickHeader) {
+          openModal('syncModal');
+          switchSyncTab('sheet');
+        }
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = originalBtnHTML;
+        lucide.createIcons();
+      }
+    }
+
+    function setupAutoRefresh() {
+      if (autoRefreshTimer) {
+        clearInterval(autoRefreshTimer);
+        autoRefreshTimer = null;
+      }
+      const seconds = parseInt(document.getElementById('autoRefreshSelect').value, 10);
+      if (seconds > 0) {
+        autoRefreshTimer = setInterval(() => {
+          syncFromGoogleSheet(true);
+        }, seconds * 1000);
+        showToast(`Auto-Refresh Google Sheet aktif setiap ${seconds} detik.`, "info");
+      } else {
+        showToast("Auto-Refresh Google Sheet dimatikan.", "info");
+      }
+    }
+
+    function parseDelimitedSchedule(rawText) {
+      const lines = rawText.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      const results = [];
+      let nextId = 1;
+
+      for (const line of lines) {
+        // Deteksi delimiter: Tab (\t) dari copy-paste sheet, atau koma (,) dari CSV
+        let cols = [];
+        if (line.includes('\t')) {
+          cols = line.split('\t').map(c => c.trim().replace(/^"|"$/g, ''));
+        } else {
+          // CSV parser sederhana yang mendukung tanda kutip
+          cols = parseCSVLine(line);
+        }
+
+        // Skip header row
+        if (!cols[0] || cols[0].toUpperCase().includes('TANGGAL') || cols[1]?.toUpperCase() === 'HOST') {
+          continue;
+        }
+
+        // Validasi minimal memiliki tanggal (mengandung /) dan host
+        if (!cols[0].includes('/') || !cols[1]) continue;
+
+        results.push({
+          id: nextId++,
+          tanggal: cols[0] || "20/11/2026",
+          host: cols[1] || "-",
+          start: normalizeTimeFormat(cols[2] || "08:00:00"),
+          duration: cols[3] || "2 Jam",
+          end: normalizeTimeFormat(cols[4] || "10:00:00"),
+          brand: cols[5] || "-",
+          studio: cols[6] || "-",
+          maraton: (cols[7] || "START").toUpperCase(),
+          lastSession: (cols[8] || "TIDAK").toUpperCase(),
+          studioActual: normalizeStudioName(cols[9] || "Studio 1"),
+          prep: cols[10] || "-",
+          status: (cols[11] || "WAITING").toUpperCase(),
+          note: cols[12] || "-"
+        });
+      }
+
+      return results;
+    }
+
+    function parseCSVLine(text) {
+      const result = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      return result;
+    }
+
+    function normalizeTimeFormat(t) {
+      if (!t || t === '-') return '00:00:00';
+      const parts = t.split(':');
+      if (parts.length === 2) {
+        return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}:00`;
+      }
+      if (parts.length === 3) {
+        return `${parts[0].padStart(2, '0')}:${parts[1].padStart(2, '0')}:${parts[2].padStart(2, '0')}`;
+      }
+      return t;
+    }
+
+    function normalizeStudioName(s) {
+      if (!s || s === '-') return 'Studio 1';
+      const numMatch = s.match(/\d+/);
+      if (numMatch) return `Studio ${numMatch[0]}`;
+      return s;
+    }
+
+    function processQuickPaste(mode) {
+      const raw = document.getElementById('pasteDataTextarea').value;
+      if (!raw.trim()) {
+        showToast("Kotak paste masih kosong. Copy baris dari Google Sheet terlebih dahulu.", "error");
+        return;
+      }
+
+      const parsed = parseDelimitedSchedule(raw);
+      if (parsed.length === 0) {
+        showToast("Format tidak dikenali. Pastikan kolom dimulai dari TANGGAL (DD/MM/YYYY) dan HOST.", "error");
+        return;
+      }
+
+      if (mode === 'replace') {
+        scheduleData = parsed;
+      } else {
+        const maxId = scheduleData.reduce((max, item) => Math.max(max, item.id), 0);
+        parsed.forEach((item, idx) => {
+          item.id = maxId + idx + 1;
+          scheduleData.push(item);
+        });
+      }
+
+      const nowStr = formatTimeHHMMSS(getWIBNow());
+      saveToLocalStorage(`Updated Paste (${nowStr} WIB)`);
+      populateDateFilterOptions();
+      renderAll();
+      document.getElementById('pasteDataTextarea').value = '';
+      closeModal('syncModal');
+      showToast(`Berhasil ${mode === 'replace' ? 'menimpa dengan' : 'menambahkan'} ${parsed.length} jadwal sesi!`, "success");
+    }
+
+    // -------------------------------------------------------------------------
+    // 6. INLINE STATUS SWITCH & CRUD MODAL
+    // -------------------------------------------------------------------------
+    const STATUS_CYCLE = ['WAITING', 'WAITING STREAM', 'ON AIR', 'ENDING SOON', 'END STREAM', 'FINISH'];
+
+    function cycleSessionStatus(id) {
+      const idx = scheduleData.findIndex(s => s.id === id);
+      if (idx === -1) return;
+
+      // Jika Auto-Status sedang ON, alihkan otomatis ke Manual Override agar klik pengguna bertahan
+      if (autoEngineEnabled) {
+        autoEngineEnabled = false;
+        updateEngineButtonUI();
+        showToast("Beralih ke Manual Override agar perubahan status Anda tersimpan.", "info");
+      }
+
+      const currentStatus = (scheduleData[idx].status || 'WAITING').toUpperCase();
+      const pos = STATUS_CYCLE.indexOf(currentStatus);
+      const nextStatus = STATUS_CYCLE[(pos + 1) % STATUS_CYCLE.length];
+      scheduleData[idx].status = nextStatus;
+
+      saveToLocalStorage(`Manual Edit (${formatTimeHHMMSS(getWIBNow())})`);
+      renderAll();
+    }
+
+    function openAddSessionModal() {
+      document.getElementById('sessionModalTitle').innerHTML = `<i data-lucide="plus-circle" class="w-4 h-4 text-emerald-400"></i><span>Tambah Sesi Jadwal Baru</span>`;
+      document.getElementById('editSessionId').value = '';
+      document.getElementById('formTanggal').value = document.getElementById('filterDate').value !== 'ALL' ? document.getElementById('filterDate').value : '20/11/2026';
+      document.getElementById('formStudioActual').value = 'Studio 1';
+      document.getElementById('formHost').value = '';
+      document.getElementById('formBrand').value = '';
+      document.getElementById('formStart').value = '08:00:00';
+      document.getElementById('formEnd').value = '12:00:00';
+      document.getElementById('formDuration').value = '4 Jam';
+      document.getElementById('formPrep').value = '07:00';
+      document.getElementById('formMaraton').value = 'START';
+      document.getElementById('formLastSession').value = 'TIDAK';
+      document.getElementById('formStatus').value = 'WAITING';
+      document.getElementById('formStudioRef').value = '-';
+      document.getElementById('formNote').value = '-';
+      openModal('sessionModal');
+      lucide.createIcons();
+    }
+
+    function openEditSessionModal(id) {
+      const item = scheduleData.find(s => s.id === id);
+      if (!item) return;
+
+      document.getElementById('sessionModalTitle').innerHTML = `<i data-lucide="edit-3" class="w-4 h-4 text-blue-400"></i><span>Edit Sesi: ${item.brand} (${item.host})</span>`;
+      document.getElementById('editSessionId').value = item.id;
+      document.getElementById('formTanggal').value = item.tanggal;
+      document.getElementById('formStudioActual').value = item.studioActual;
+      document.getElementById('formHost').value = item.host;
+      document.getElementById('formBrand').value = item.brand;
+      document.getElementById('formStart').value = item.start;
+      document.getElementById('formEnd').value = item.end;
+      document.getElementById('formDuration').value = item.duration;
+      document.getElementById('formPrep').value = item.prep;
+      document.getElementById('formMaraton').value = item.maraton;
+      document.getElementById('formLastSession').value = item.lastSession;
+      document.getElementById('formStatus').value = item.status;
+      document.getElementById('formStudioRef').value = item.studio;
+      document.getElementById('formNote').value = item.note;
+      openModal('sessionModal');
+      lucide.createIcons();
+    }
+
+    function saveSessionForm(e) {
+      e.preventDefault();
+      const idVal = document.getElementById('editSessionId').value;
+      const payload = {
+        tanggal: document.getElementById('formTanggal').value.trim(),
+        studioActual: document.getElementById('formStudioActual').value,
+        host: document.getElementById('formHost').value.trim().toUpperCase(),
+        brand: document.getElementById('formBrand').value.trim().toUpperCase(),
+        start: normalizeTimeFormat(document.getElementById('formStart').value.trim()),
+        end: normalizeTimeFormat(document.getElementById('formEnd').value.trim()),
+        duration: document.getElementById('formDuration').value.trim(),
+        prep: document.getElementById('formPrep').value.trim() || '-',
+        maraton: document.getElementById('formMaraton').value,
+        lastSession: document.getElementById('formLastSession').value,
+        status: document.getElementById('formStatus').value,
+        studio: document.getElementById('formStudioRef').value.trim() || '-',
+        note: document.getElementById('formNote').value.trim() || '-'
+      };
+
+      if (idVal) {
+        const idx = scheduleData.findIndex(s => s.id === Number(idVal));
+        if (idx !== -1) {
+          scheduleData[idx] = { ...scheduleData[idx], ...payload };
+        }
+        showToast("Perubahan sesi berhasil disimpan.", "success");
+      } else {
+        const maxId = scheduleData.reduce((m, s) => Math.max(m, s.id), 0);
+        scheduleData.push({ id: maxId + 1, ...payload });
+        showToast("Sesi jadwal baru berhasil ditambahkan.", "success");
+      }
+
+      saveToLocalStorage(`Updated (${formatTimeHHMMSS(getWIBNow())})`);
+      populateDateFilterOptions();
+      renderAll();
+      closeModal('sessionModal');
+    }
+
+    function deleteSession(id) {
+      scheduleData = scheduleData.filter(s => s.id !== id);
+      saveToLocalStorage(`Deleted Row (${formatTimeHHMMSS(getWIBNow())})`);
+      populateDateFilterOptions();
+      renderAll();
+      showToast("Sesi jadwal dihapus.", "info");
+    }
+
+    function exportToCSV() {
+      const headers = ["TANGGAL", "HOST", "START", "DURATION", "END", "BRAND", "STUDIO", "MARATON?", "LAST SESSION", "STUDIO_ACTUAL", "PREP", "STATUS/SWITCH", "NOTE"];
+      const rows = scheduleData.map(s => [
+        s.tanggal, s.host, s.start, s.duration, s.end, s.brand, s.studio, s.maraton, s.lastSession, s.studioActual, s.prep, s.status, s.note
+      ].map(val => `"${String(val || '').replace(/"/g, '""')}"`).join(','));
+
+      const csvContent = [headers.join(','), ...rows].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Dashboard_3Hari_Updated_${formatDateDDMMYYYY(getWIBNow()).replace(/\//g, '-')}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("File CSV berhasil diunduh! Siap di-upload kembali ke Google Sheet.", "success");
+    }
+
+    function confirmResetDefault() {
+      openModal('resetConfirmModal');
+    }
+
+    function executeResetDefault() {
+      scheduleData = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE_DATA));
+      autoEngineEnabled = true;
+      updateEngineButtonUI();
+      saveToLocalStorage("Reset Default (51 Baris)");
+      populateDateFilterOptions();
+      renderAll();
+      closeModal('resetConfirmModal');
+      showToast("Data dikembalikan ke 51 jadwal default Dashboard_3Hari.", "success");
+    }
+
+    // -------------------------------------------------------------------------
+    // 7. MODAL & TOAST HELPERS
+    // -------------------------------------------------------------------------
+    function openModal(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.remove('hidden');
+        el.classList.add('flex');
+      }
+    }
+
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.classList.add('hidden');
+        el.classList.remove('flex');
+      }
+    }
+
+    function switchSyncTab(tab) {
+      const tabSheet = document.getElementById('syncTabSheet');
+      const tabPaste = document.getElementById('syncTabPaste');
+      const btnSheet = document.getElementById('tabBtnSheet');
+      const btnPaste = document.getElementById('tabBtnPaste');
+
+      if (tab === 'sheet') {
+        tabSheet.classList.remove('hidden');
+        tabPaste.classList.add('hidden');
+        btnSheet.className = "pb-2.5 text-xs font-bold border-b-2 border-blue-500 text-blue-400 transition cursor-pointer";
+        btnPaste.className = "pb-2.5 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer";
+      } else {
+        tabSheet.classList.add('hidden');
+        tabPaste.classList.remove('hidden');
+        btnPaste.className = "pb-2.5 text-xs font-bold border-b-2 border-blue-500 text-blue-400 transition cursor-pointer";
+        btnSheet.className = "pb-2.5 text-xs font-bold border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer";
+      }
+    }
+
+    function showToast(message, type = "info") {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      let colors = "bg-slate-800 border-slate-700 text-slate-100";
+      if (type === "success") colors = "bg-emerald-950/95 border-emerald-500/50 text-emerald-200";
+      if (type === "error") colors = "bg-red-950/95 border-red-500/50 text-red-200";
+      if (type === "info") colors = "bg-blue-950/95 border-blue-500/50 text-blue-200";
+
+      toast.className = `pointer-events-auto border ${colors} px-4 py-3 rounded-xl shadow-2xl text-xs font-medium flex items-center justify-between gap-3 transition-all duration-300`;
+      toast.innerHTML = `<span>${message}</span>`;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(8px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    // Boot application on load
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
